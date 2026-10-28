@@ -1,0 +1,19 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+
+# Dataset
+/data/archive/
+/data/archive.zip
+
+# Virtual Python-Enviroment
+/.venv/
+
+# Python-Cache
+__pycache__/
+*.py[cod]
+
+# Local PyCharm-Settings
+/.idea/
