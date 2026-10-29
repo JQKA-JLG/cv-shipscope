@@ -77,7 +77,7 @@ def totals(scenes):
 
 def save_scenes(splits):
     with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.writer(csvfile)
+        writer = csv.writer(csvfile, lineterminator="\n")
         writer.writerow(["scene_id", "split", "negative", "positive"])
         for split_id, scenes in splits.items():
             for scene_id, neg, pos in scenes:
