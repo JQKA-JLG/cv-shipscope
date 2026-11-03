@@ -83,6 +83,19 @@ def save_partitions(splits):
             for scene_id, neg, pos in scenes:
                 writer.writerow([scene_id, split_id, neg, pos])
 
+def print_split_summary(splits):
+    for split_id, scenes in splits.items():
+        negative, positive = totals(scenes)
+        image_count = negative + positive
+
+        print(
+            f"Split: {split_id} \n"
+            f"{len(scenes)} scenes | "
+            f"{image_count} images | "
+            f"{negative} negative | "
+            f"{positive} positive"
+        )
+
 def main():
     sorted_scenes = sort_scenes(load_scenes(CSV_PATH))
 
@@ -102,8 +115,12 @@ def main():
     if totals(train) != (2100, 700):
         raise ValueError("Training split does not match the expected class totals.")
 
-    save_partitions({"validate": validate, "test": test, "train": train})
-    print("Done.\n")
+    splits = {"validate": validate, "test": test, "train": train}
+
+    print_split_summary(splits)
+
+    save_partitions(splits)
+    print("Saved scene partitions.\n")
 
 if __name__ == "__main__":
     main()
