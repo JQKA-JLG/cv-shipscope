@@ -55,15 +55,15 @@ def find_subset(scenes, target_neg, target_pos):
     if target not in parent:
         return None
 
-    chosen = []
+    selected_scenes = []
     state = target
 
     while parent[state] is not None:
         i, previous = parent[state]
-        chosen.append(scenes[i])
+        selected_scenes.append(scenes[i])
         state = previous
 
-    return chosen
+    return selected_scenes
 
 
 def remove_scenes(scenes, scenes_to_remove):
@@ -75,7 +75,7 @@ def totals(scenes):
     sum_pos = sum(scene[2] for scene in scenes)
     return sum_neg, sum_pos
 
-def save_scenes(splits):
+def save_partitions(splits):
     with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.writer(csvfile, lineterminator="\n")
         writer.writerow(["scene_id", "split", "negative", "positive"])
@@ -102,7 +102,7 @@ def main():
     if totals(train) != (2100, 700):
         raise ValueError("Training split does not match the expected class totals.")
 
-    save_scenes({"validate": validate, "test": test, "train": train})
+    save_partitions({"validate": validate, "test": test, "train": train})
     print("Done.\n")
 
 if __name__ == "__main__":
