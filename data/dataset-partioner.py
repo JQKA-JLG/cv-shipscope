@@ -110,8 +110,12 @@ def main():
     # train is what remains
     train = remove_scenes(remaining_sorted_scenes, test)
 
-    assert totals(validate) == (TARGET_NEG, TARGET_POS)
-    assert totals(test) == (TARGET_NEG, TARGET_POS)
+    if totals(validate) != (TARGET_NEG, TARGET_POS):
+        raise ValueError("Validate split does not match the expected class totals.")
+
+    if totals(test) != (TARGET_NEG, TARGET_POS):
+        raise ValueError("Test split does not match the expected class totals.")
+
     if totals(train) != (2100, 700):
         raise ValueError("Training split does not match the expected class totals.")
 
