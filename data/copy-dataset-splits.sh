@@ -27,6 +27,11 @@ if [[ ! -f "$SCENE_PARTITIONS_CSV" ]]; then
   exit 1
 fi
 
+# Cleanup
+for split in "train" "validate" "test"; do
+  rm -f -- "${PARTITIONS_PATH}${split}/"*.png || exit 1
+done
+
 while IFS=',' read -r line_scene_id line_split _ _; do
   while read -r image_name; do
     if ! cp -- "$DATASET_PATH$image_name" "$PARTITIONS_PATH$line_split/$image_name"; then
