@@ -2,6 +2,8 @@
 
 DATASET_PATH='archive/shipsnet/shipsnet/'
 
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")" || exit 1
+
 if [[ ! -d "$DATASET_PATH" ]]; then
   printf 'Dataset directory not found: %s\n' "$DATASET_PATH" >&2
   exit 1

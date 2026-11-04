@@ -7,6 +7,8 @@ EXPECTED_POSITIVE_LABEL_SUM=1000
 
 CSV="scene_stats.csv"
 
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")" || exit 1
+
 if [[ ! -f "$CSV" ]]; then
   printf 'There is no CSV file: %s\n' "$CSV" >&2
   exit 1
