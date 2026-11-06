@@ -9,6 +9,9 @@
 /data/archive.zip
 /data/partitioned/
 
+# Debug Checkpoint
+/model/cnn_debug_best.pth
+
 # Virtual Python-Enviroment
 /.venv/
 
