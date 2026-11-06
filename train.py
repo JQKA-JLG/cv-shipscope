@@ -66,20 +66,23 @@ def validation_loop(dataloader, model, loss_fn):
     # Avg loss, Accuracy, Precision, Recall, F1
     return val_loss / size, correct / size, precision, recall, f1
 
-def main():
-    # Manual Seed for reproducibility
-    # 42 - The Hitchhiker's Guide to the Galaxy reference
-    seed=42
+def setup_training(seed=42, batch_size=64, learning_rate=0.001):
     torch.manual_seed(seed)
-
     train_dataset = ShipScopeDataset("data/partitioned/train")
     val_dataset = ShipScopeDataset("data/partitioned/validate")
-    train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=64, shuffle=False)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
     model = Net()
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+    return seed, train_dataloader, val_dataloader, model, loss_fn, optimizer
+
+def main():
+    # Manual Seed for reproducibility
+    # 42 - The Hitchhiker's Guide to the Galaxy reference
+    seed, train_dataloader, val_dataloader, model, loss_fn, optimizer = setup_training()
 
     checkpoint_path = Path("model/cnn_debug_best.pth")
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
