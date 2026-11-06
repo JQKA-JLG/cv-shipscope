@@ -18,7 +18,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         prediction = model(features)
         loss = loss_fn(prediction, labels)
 
-        # Backprogagation
+        # Backpropagation
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
@@ -46,7 +46,7 @@ def validation_loop(dataloader, model, loss_fn):
         for features, labels in dataloader:
             prediction = model(features)
             predicted_labels = prediction.argmax(dim=1)
-            # Multiply the average loss by number of images ti get the batch's total loss.
+            # Multiply the average loss by the number of images to get the batch's total loss.
             val_loss += loss_fn(prediction, labels).item() * features.shape[0]
             correct += (predicted_labels == labels).type(torch.float).sum().item()
             tp += ((predicted_labels == 1) & (labels == 1)).sum().item()
