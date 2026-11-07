@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import csv
+import cv2 as cv
 from torch.utils.data import DataLoader
 from pathlib import Path
 from time import perf_counter
@@ -68,10 +69,10 @@ def validation_loop(dataloader, model, loss_fn):
     # Avg loss, Accuracy, Precision, Recall, F1
     return val_loss / size, correct / size, precision, recall, f1
 
-def setup_training(seed=42, batch_size=64, learning_rate=0.001):
+def setup_training(seed=42, batch_size=64, learning_rate=0.001, preprocessing=None):
     torch.manual_seed(seed)
-    train_dataset = ShipScopeDataset("data/partitioned/train")
-    val_dataset = ShipScopeDataset("data/partitioned/validate")
+    train_dataset = ShipScopeDataset("data/partitioned/train", preprocessing=preprocessing)
+    val_dataset = ShipScopeDataset("data/partitioned/validate", preprocessing=preprocessing)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
@@ -175,6 +176,16 @@ def run_training(start_epoch, best_f1, seed, last_path, best_path, train_dataloa
             torch.save(checkpoint, best_path)
             print(f"New Best F1: {best_f1:.1%}")
     print(f"Best F1: {best_f1:.1%}")
+
+def apply_grayscale(img):
+    gray = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+    return cv.cvtColor(gray, cv.COLOR_GRAY2RGB)
+
+clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+def apply_clahe(img):
+    lab = cv.cvtColor(img, cv.COLOR_RGB2Lab)
+    lab[:, :, 0] = clahe.apply(lab[:, :, 0])
+    return cv.cvtColor(lab, cv.COLOR_Lab2RGB)
 
 def main():
     # Manual Seed for reproducibility
