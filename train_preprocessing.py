@@ -5,13 +5,14 @@ def main(run_parameters):
     (experiment, preprocessing) = run_parameters
     seed, train_dataloader, val_dataloader, model, loss_fn, optimizer, learning_rate = setup_training(preprocessing=preprocessing)
 
+    experiment = f"preprocessing-{experiment}"
     run_name = f"{experiment}_{seed}_{learning_rate}"
 
     preprocessing_best_path = Path(f"model/{run_name}_best.pth")
     preprocessing_last_path = Path(f"model/{run_name}_last.pth")
     preprocessing_last_path.parent.mkdir(parents=True, exist_ok=True)
 
-    progress_path = Path(f"data/{experiment}/{run_name}_learning-progress.csv")
+    progress_path = Path("data/preprocessing") / f"{run_name}_learning-progress.csv"
 
     start_epoch, best_f1 = load_training_state(preprocessing_last_path, model, optimizer)
 
