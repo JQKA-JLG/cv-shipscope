@@ -79,6 +79,69 @@ def setup_training(seed=42, batch_size=64, learning_rate=0.001):
 
     return seed, train_dataloader, val_dataloader, model, loss_fn, optimizer
 
+def load_training_state(last_path, model, optimizer):
+    ts_start_epoch = 0
+    ts_best_f1 = -1.0
+
+    if last_path.exists():
+        checkpoint = torch.load(last_path, weights_only=True)
+
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+        ts_start_epoch = checkpoint["epoch"]
+        ts_best_f1 = checkpoint["best_f1"]
+        if "rng_state" in checkpoint:
+            torch.set_rng_state(checkpoint["rng_state"])
+
+    return ts_start_epoch, ts_best_f1
+
+def run_training(start_epoch, best_f1, seed, last_path, best_path, train_dataloader, val_dataloader, model, loss_fn, optimizer, num_epochs=25):
+    for epoch in range(start_epoch, num_epochs):
+        print(f"\nEpoch {epoch + 1}\n-------------------------------")
+        # Model training:
+        epoch_loss = train_loop(train_dataloader, model, loss_fn, optimizer)
+        print(f"Training loss: {epoch_loss:.4f}\n")
+
+        # Model evaluation
+        (epoch_val_loss,
+         epoch_correct,
+         epoch_precision,
+         epoch_recall,
+         epoch_f1) = validation_loop(val_dataloader, model, loss_fn)
+        print(f"Validation: \n"
+              f"Avg loss: {epoch_val_loss:.4f}\n"
+              f"Accuracy: {epoch_correct:.1%}\n"
+              f"Precision: {epoch_precision:.1%}\n"
+              f"Recall: {epoch_recall:.1%}\n"
+              f"F1: {epoch_f1:.1%}")
+        is_best = epoch_f1 > best_f1
+        best_f1 = max(best_f1, epoch_f1)
+
+        checkpoint = {
+            "epoch": epoch + 1,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "train_loss": epoch_loss,
+            "validation_loss": epoch_val_loss,
+            "f1": epoch_f1,
+            "best_f1": best_f1,
+            "precision": epoch_precision,
+            "recall": epoch_recall,
+            "correct": epoch_correct,
+            "seed": seed,
+            "learning_rate": optimizer.param_groups[0]["lr"],
+            "rng_state": torch.get_rng_state()
+        }
+        # Save latest state after every completed epoch.
+        torch.save(checkpoint, last_path)
+
+        # Replace the best checkpoint when F1 improves in current epoch.
+        if is_best:
+            torch.save(checkpoint, best_path)
+            print(f"New Best F1: {best_f1:.1%}")
+    print(f"Best F1: {best_f1:.1%}")
+
 def main():
     # Manual Seed for reproducibility
     # 42 - The Hitchhiker's Guide to the Galaxy reference
