@@ -5,8 +5,9 @@ import torch
 from torch.utils.data import Dataset
 
 class ShipScopeDataset(Dataset):
-    def __init__(self, directory, preprocessing=None):
+    def __init__(self, directory, preprocessing=None, augmentation=None):
         self.preprocessing = preprocessing
+        self.augmentation = augmentation
         self.paths = sorted(Path(directory).glob('*.png'))
 
     def __len__(self):
@@ -31,6 +32,11 @@ class ShipScopeDataset(Dataset):
                 img = method(img)
 
         img = torch.from_numpy(img).permute(2, 0, 1).float() / 255.0
+
+        if self.augmentation is not None:
+            for method in self.augmentation:
+                img = method(img)
+
         label = torch.tensor(label)
 
         return img, label
