@@ -1,6 +1,6 @@
 # ShipScope
 
-**Scene-aware ship classification in satellite imagery**
+**Ship classification in satellite imagery**
 
 ShipScope is a personal learning and portfolio project in computer vision.
 Its goal is to classify satellite image patches as **ship** or **no ship**, with a focus on clear documentation, careful
@@ -12,8 +12,15 @@ training?
 
 ## Project status
 
-This project is still in development. The first milestone is a working baseline evaluated on held-out scenes.
-No measured model results are available yet.
+Dataset auditing and scene-based partitioning are complete. A three-block CNN baseline has been trained and validated,
+achieving a validation F1-score of **98.3%**.
+
+The next milestone is experiment comparison and final test-set evaluation, including confusion matrices and 
+prediction error analysis.
+
+See [PR #1](https://github.com/JQKA-JLG/cv-shipscope/pull/1) for data audit and scene-based partitioning.
+
+See [PR #3](https://github.com/JQKA-JLG/cv-shipscope/pull/3) for baseline training configuration and results.
 
 ## Dataset
 
