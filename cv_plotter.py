@@ -1,9 +1,10 @@
 import argparse
 import matplotlib.pyplot as plt
 import csv
+import numpy as np
 
 from pathlib import Path
-
+from sklearn import metrics
 
 groups = {}
 
@@ -66,6 +67,38 @@ def fill_groups(preprocessing_experiments):
             "epochs": epochs,
             "f1_scores": f1_scores
         }
+
+def plot_confusion_matrix(test_evaluation):
+    matrix = np.array([
+        [int(test_evaluation["tn"]), int(test_evaluation["fp"])],
+        [int(test_evaluation["fn"]), int(test_evaluation["tp"])]
+    ])
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+
+    cm_display = metrics.ConfusionMatrixDisplay(
+        confusion_matrix=matrix,
+        display_labels=["No ship", "Ship"]
+    )
+
+    cm_display.plot(ax=ax, cmap=plt.cm.Blues)
+
+    ax.set_xlabel("Predicted label")
+    ax.set_ylabel("Actual label")
+    ax.set_title(f"Confusion Matrix - {test_evaluation["experiment"]}\n"
+                 f"Seed {test_evaluation["seed"]}, "
+                 f"learning rate {test_evaluation["learning_rate"]}, "
+                 f"num_epochs {test_evaluation["num_epochs"]}")
+
+    output_path = Path("plots") / (f"cm_{test_evaluation["seed"]}"
+                                   f"_{test_evaluation["learning_rate"]}"
+                                   f"_{test_evaluation["num_epochs"]}"
+                                   f"_{test_evaluation["experiment"]}.png")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    fig.tight_layout()
+    fig.savefig(output_path)
+    plt.close(fig)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
