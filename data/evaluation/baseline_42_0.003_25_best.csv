@@ -1,0 +1,2 @@
+checkpoint,experiment,seed,learning_rate,num_epochs,loss,split,accuracy,precision,recall,f1,tn,fp,fn,tp
+baseline_42_0.003_25_best.pth,baseline,42,0.003,25,0.07578621002966732,test,0.985,0.9490445859872612,0.9933333333333333,0.9706840390879479,442,8,1,149

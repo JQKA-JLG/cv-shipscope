@@ -1,0 +1,2 @@
+checkpoint,experiment,seed,learning_rate,num_epochs,loss,split,accuracy,precision,recall,f1,tn,fp,fn,tp
+preprocessing-grayscale-clahe_43_0.001_25_best.pth,preprocessing-grayscale-clahe,43,0.001,25,0.0696471629322817,test,0.9816666666666667,0.9727891156462585,0.9533333333333334,0.962962962962963,446,4,7,143

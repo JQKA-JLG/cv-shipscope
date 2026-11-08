@@ -12,15 +12,17 @@ training?
 
 ## Project status
 
-Dataset auditing and scene-based partitioning are complete. A three-block CNN baseline has been trained and validated,
-achieving a validation F1-score of **98.3%**.
+Dataset auditing, scene-based partitioning, baseline training and experiment comparison are complete. Baseline, data augmentation and greyscale + CLAHE checkpoints have been evaluated on the test split. Training logs, checkpoints, evaluation CSVs, learning curves and confusion matrices are included in the repository.
 
-The next milestone is experiment comparison and final test-set evaluation, including confusion matrices and 
-prediction error analysis.
+With a learning rate of 0.001 and a 100 epoch training budget, augmentation achieved a mean test F1-score of **98.25%** across three seeds, compared with **97.37%** for the baseline. The highest individual augmentation test F1-score was **99.00%**.
+
+The next milestone is qualitative prediction error analysis.
 
 See [PR #1](https://github.com/JQKA-JLG/cv-shipscope/pull/1) for data audit and scene-based partitioning.
 
 See [PR #3](https://github.com/JQKA-JLG/cv-shipscope/pull/3) for baseline training configuration and results.
+
+See [PR #4](https://github.com/JQKA-JLG/cv-shipscope/pull/4) for preprocessing and augmentation experiments, learning curves and test-set evaluation.
 
 ## Dataset
 
@@ -47,10 +49,11 @@ The dataset is downloaded separately and excluded from version control.
     validation, and test sets with target proportions of 70%, 15%, and 15%. Keep all images from the same source scene 
 in a single split.
 2. **Baseline training:** Train and evaluate a simple baseline.
-3. **Experiment comparison:** Compare selected preprocessing methods, training augmentations and transfer learning. 
-For each model, including the baseline, report precision, recall and F1-score for the ship class, present a confusion
-matrix and analyse prediction errors.
-4. **Command-line interface:** Add a command-line interface for new image patches.
+3. **Experiment comparison:** Compare selected preprocessing methods and training augmentations. 
+For each model, including the baseline, report precision, recall and F1-score for the ship class and present a confusion
+matrix.
+4. **Prediction error analysis:** Analyse false positives and false negatives, identify recurring error patterns and document representative examples.
+5. **Command-line interface:** Add a command-line interface for new image patches.
 
 ## Planned stack
 *Subject to change during development*

@@ -1,7 +1,10 @@
 import torch
 import torch.nn as nn
+import csv
+import cv2 as cv
 from torch.utils.data import DataLoader
 from pathlib import Path
+from time import perf_counter
 
 from dataset import ShipScopeDataset
 from model import Net
@@ -34,7 +37,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
 
     return loss_sum / processed
 
-def validation_loop(dataloader, model, loss_fn):
+def validation_loop(dataloader, model, loss_fn, return_confusion_matrix=False):
     model.eval()
     size = len(dataloader.dataset)
     val_loss, correct = 0, 0
@@ -63,13 +66,22 @@ def validation_loop(dataloader, model, loss_fn):
     recall = tp / (tp + fn) if tp + fn > 0 else 0.0
     f1 = 2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0.0
 
-    # Avg loss, Accuracy, Precision, Recall, F1
-    return val_loss / size, correct / size, precision, recall, f1
+    metrics = (val_loss / size, correct / size, precision, recall, f1)
 
-def setup_training(seed=42, batch_size=64, learning_rate=0.001):
+    if return_confusion_matrix:
+        confusion_matrix = [
+            [tn, fp],
+            [fn, tp]
+        ]
+        return metrics, confusion_matrix
+
+    # Avg loss, Accuracy, Precision, Recall, F1
+    return metrics
+
+def setup_training(seed=42, batch_size=64, learning_rate=0.001, preprocessing=None, augmentation=None):
     torch.manual_seed(seed)
-    train_dataset = ShipScopeDataset("data/partitioned/train")
-    val_dataset = ShipScopeDataset("data/partitioned/validate")
+    train_dataset = ShipScopeDataset("data/partitioned/train", preprocessing, augmentation)
+    val_dataset = ShipScopeDataset("data/partitioned/validate", preprocessing)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
@@ -77,12 +89,117 @@ def setup_training(seed=42, batch_size=64, learning_rate=0.001):
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    return seed, train_dataloader, val_dataloader, model, loss_fn, optimizer
+    return seed, train_dataloader, val_dataloader, model, loss_fn, optimizer, learning_rate
+
+def load_training_state(last_path, model, optimizer):
+    ts_start_epoch = 0
+    ts_best_f1 = -1.0
+
+    if last_path.exists():
+        checkpoint = torch.load(last_path, weights_only=True)
+
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+        ts_start_epoch = checkpoint["epoch"]
+        ts_best_f1 = checkpoint["best_f1"]
+        if "rng_state" in checkpoint:
+            torch.set_rng_state(checkpoint["rng_state"])
+
+    return ts_start_epoch, ts_best_f1
+
+def write_training_progress(progress_path, checkpoint, epoch_seconds):
+    row = {
+        "epoch": checkpoint["epoch"],
+        "seed": checkpoint["seed"],
+        "learning_rate": checkpoint["learning_rate"],
+        "train_loss": checkpoint["train_loss"],
+        "validation_loss": checkpoint["validation_loss"],
+        "validation_accuracy": checkpoint["correct"],
+        "validation_precision": checkpoint["precision"],
+        "validation_recall": checkpoint["recall"],
+        "validation_f1": checkpoint["f1"],
+        "epoch_time_seconds": epoch_seconds
+    }
+
+    progress_path.parent.mkdir(parents=True, exist_ok=True)
+    has_content = progress_path.exists() and progress_path.stat().st_size > 0
+
+    with progress_path.open("a", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=list(row))
+
+        if not has_content:
+            writer.writeheader()
+
+        writer.writerow(row)
+
+def run_training(start_epoch, best_f1, seed, last_path, best_path, train_dataloader, val_dataloader, model, loss_fn, optimizer, progress_path, num_epochs=25):
+    for epoch in range(start_epoch, num_epochs):
+        print(f"\nEpoch {epoch + 1}\n-------------------------------")
+        epoch_started = perf_counter()
+        # Model training:
+        epoch_loss = train_loop(train_dataloader, model, loss_fn, optimizer)
+        print(f"Training loss: {epoch_loss:.4f}\n")
+
+        # Model evaluation
+        (epoch_val_loss,
+         epoch_correct,
+         epoch_precision,
+         epoch_recall,
+         epoch_f1) = validation_loop(val_dataloader, model, loss_fn)
+
+        epoch_seconds = perf_counter() - epoch_started
+
+        print(f"Validation: \n"
+              f"Avg loss: {epoch_val_loss:.4f}\n"
+              f"Accuracy: {epoch_correct:.1%}\n"
+              f"Precision: {epoch_precision:.1%}\n"
+              f"Recall: {epoch_recall:.1%}\n"
+              f"F1: {epoch_f1:.1%}")
+        is_best = epoch_f1 > best_f1
+        best_f1 = max(best_f1, epoch_f1)
+
+        checkpoint = {
+            "epoch": epoch + 1,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "train_loss": epoch_loss,
+            "validation_loss": epoch_val_loss,
+            "f1": epoch_f1,
+            "best_f1": best_f1,
+            "precision": epoch_precision,
+            "recall": epoch_recall,
+            "correct": epoch_correct,
+            "seed": seed,
+            "learning_rate": optimizer.param_groups[0]["lr"],
+            "rng_state": torch.get_rng_state()
+        }
+        # Save latest state after every completed epoch.
+        torch.save(checkpoint, last_path)
+
+        # Write progress
+        write_training_progress(progress_path, checkpoint, epoch_seconds)
+
+        # Replace the best checkpoint when F1 improves in current epoch.
+        if is_best:
+            torch.save(checkpoint, best_path)
+            print(f"New Best F1: {best_f1:.1%}")
+    print(f"Best F1: {best_f1:.1%}")
+
+def apply_grayscale(img):
+    gray = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+    return cv.cvtColor(gray, cv.COLOR_GRAY2RGB)
+
+clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+def apply_clahe(img):
+    lab = cv.cvtColor(img, cv.COLOR_RGB2Lab)
+    lab[:, :, 0] = clahe.apply(lab[:, :, 0])
+    return cv.cvtColor(lab, cv.COLOR_Lab2RGB)
 
 def main():
     # Manual Seed for reproducibility
     # 42 - The Hitchhiker's Guide to the Galaxy reference
-    seed, train_dataloader, val_dataloader, model, loss_fn, optimizer = setup_training()
+    seed, train_dataloader, val_dataloader, model, loss_fn, optimizer, _ = setup_training()
 
     checkpoint_path = Path("model/cnn_debug_best.pth")
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
