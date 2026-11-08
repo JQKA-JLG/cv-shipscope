@@ -1,8 +1,10 @@
+import argparse
+
 from train import setup_training, load_training_state, run_training
 from pathlib import Path
 from torchvision.transforms import v2
 
-def main():
+def main(num_epochs):
     random_rotation = v2.RandomChoice([
         v2.RandomRotation(degrees=(0, 0)),
         v2.RandomRotation(degrees=(90, 90)),
@@ -14,7 +16,7 @@ def main():
     seed, train_dataloader, val_dataloader, model, loss_fn, optimizer, learning_rate = setup_training(augmentation=augmentation)
 
     experiment = "augmentation"
-    run_name = f"{experiment}_{seed}_{learning_rate}"
+    run_name = f"{experiment}_{seed}_{learning_rate}_{num_epochs}"
 
     augmentation_best_path = Path(f"model/{run_name}_best.pth")
     augmentation_last_path = Path(f"model/{run_name}_last.pth")
@@ -25,7 +27,14 @@ def main():
     start_epoch, best_f1 = load_training_state(augmentation_last_path, model, optimizer)
 
     run_training(start_epoch, best_f1, seed, augmentation_last_path, augmentation_best_path, train_dataloader,
-                 val_dataloader, model, loss_fn, optimizer, progress_path)
+                 val_dataloader, model, loss_fn, optimizer, progress_path, num_epochs=num_epochs)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--num_epochs", type=int, default=25)
+    args = parser.parse_args()
+
+    if args.num_epochs < 1:
+        parser.error("--num_epochs must be 1 or greater")
+
+    main(args.num_epochs)
