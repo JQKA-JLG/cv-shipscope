@@ -1,0 +1,2 @@
+checkpoint,experiment,seed,learning_rate,num_epochs,loss,split,accuracy,precision,recall,f1,tn,fp,fn,tp
+augmentation_44_0.001_25_best.pth,augmentation,44,0.001,25,0.044258555372556053,test,0.9883333333333333,0.9554140127388535,1.0,0.9771986970684039,443,7,0,150
