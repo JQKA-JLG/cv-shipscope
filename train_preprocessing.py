@@ -3,9 +3,9 @@ import argparse
 from train import setup_training, load_training_state, run_training, apply_grayscale, apply_clahe
 from pathlib import Path
 
-def main(run_parameters, num_epochs):
+def main(run_parameters, num_epochs, learning_rate, seed):
     (experiment, preprocessing) = run_parameters
-    seed, train_dataloader, val_dataloader, model, loss_fn, optimizer, learning_rate = setup_training(preprocessing=preprocessing)
+    seed, train_dataloader, val_dataloader, model, loss_fn, optimizer, learning_rate = setup_training(preprocessing=preprocessing, learning_rate=learning_rate, seed=seed)
 
     experiment = f"preprocessing-{experiment}"
     run_name = f"{experiment}_{seed}_{learning_rate}_{num_epochs}"
@@ -28,11 +28,16 @@ if __name__ == "__main__":
         "--experiment",
         choices=["grayscale", "clahe", "grayscale-clahe"],
         required=True)
+    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--seed", type=int, default=42)
 
     args = parser.parse_args()
 
     if args.num_epochs < 1:
         parser.error("--num_epochs must be 1 or greater")
+
+    if args.learning_rate <= 0:
+        parser.error("--learning_rate must be greater than 0")
 
     experiments = {
         "grayscale": ("grayscale", [apply_grayscale]),
@@ -40,4 +45,4 @@ if __name__ == "__main__":
         "grayscale-clahe": ("grayscale-clahe", [apply_grayscale, apply_clahe])
     }
 
-    main(experiments[args.experiment], args.num_epochs)
+    main(experiments[args.experiment], args.num_epochs, args.learning_rate, args.seed)
