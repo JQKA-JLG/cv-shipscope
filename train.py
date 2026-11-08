@@ -37,7 +37,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
 
     return loss_sum / processed
 
-def validation_loop(dataloader, model, loss_fn):
+def validation_loop(dataloader, model, loss_fn, return_confusion_matrix=False):
     model.eval()
     size = len(dataloader.dataset)
     val_loss, correct = 0, 0
@@ -66,8 +66,17 @@ def validation_loop(dataloader, model, loss_fn):
     recall = tp / (tp + fn) if tp + fn > 0 else 0.0
     f1 = 2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0.0
 
+    metrics = (val_loss / size, correct / size, precision, recall, f1)
+
+    if return_confusion_matrix:
+        confusion_matrix = [
+            [tn, fp],
+            [fn, tp]
+        ]
+        return metrics, confusion_matrix
+
     # Avg loss, Accuracy, Precision, Recall, F1
-    return val_loss / size, correct / size, precision, recall, f1
+    return metrics
 
 def setup_training(seed=42, batch_size=64, learning_rate=0.001, preprocessing=None, augmentation=None):
     torch.manual_seed(seed)
